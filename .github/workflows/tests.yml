@@ -34,6 +34,18 @@ jobs:
         with:
           persist-credentials: false
 
+      # GitHub's macOS runners preinstall aws/tap; Homebrew's tap-trust check
+      # then warns on every brew command. Untap it (the fix the warning names).
+      - name: Drop preinstalled untrusted taps
+        if: runner.os == 'macOS'
+        run: brew untap aws/tap || true
+
+      # GitHub's Linux runners cannot run bubblewrap, so Homebrew's sandbox
+      # probe fails and it warns on every build/post-install. Skip the probe.
+      - name: Disable the Homebrew sandbox on Linux
+        if: runner.os == 'Linux'
+        run: echo "HOMEBREW_NO_SANDBOX=1" >> "$GITHUB_ENV"
+
       - name: Put Linuxbrew on PATH
         if: runner.os == 'Linux'
         run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
