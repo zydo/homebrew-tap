@@ -40,11 +40,12 @@ jobs:
         if: runner.os == 'macOS'
         run: brew untap aws/tap || true
 
-      # GitHub's Linux runners cannot run bubblewrap, so Homebrew's sandbox
-      # probe fails and it warns on every build/post-install. Skip the probe.
-      - name: Disable the Homebrew sandbox on Linux
+      # Ubuntu 24.04 restricts unprivileged user namespaces via AppArmor, which
+      # breaks Homebrew's bubblewrap sandbox probe (it then warns on every build
+      # and post-install). Re-enable them so the sandbox actually works.
+      - name: Allow unprivileged user namespaces (bubblewrap sandbox)
         if: runner.os == 'Linux'
-        run: echo "HOMEBREW_NO_SANDBOX=1" >> "$GITHUB_ENV"
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: Put Linuxbrew on PATH
         if: runner.os == 'Linux'
