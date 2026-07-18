@@ -1,6 +1,6 @@
 # Homebrew formula for the headless `alle` channel (macOS + Linux).
 #
-# This is the canonical source of the formula. The `homebrew-alle` tap ships a
+# This is the canonical source of the formula. The `homebrew-tap` tap ships a
 # copy of it; the release workflow updates the tap's copy only after the
 # matching `alle-proxy` release exists on PyPI, using
 # `scripts/update-homebrew-formula.py` to fill the `url`/`sha256` below with the
@@ -9,17 +9,15 @@
 #
 # Product boundary: this channel is deliberately headless. It installs the CLI,
 # background daemon, loopback control API, and the version-locked bundled Web UI
-# — never the `[tray]` extra, `rumps`, the `alle-tray` launcher, `alle.tray`, or
-# `alle.companion`. The base wheel still ships the companion thin client (the
-# pip/uv channel uses it, and it is unit-tested there); `install` strips that
-# GUI surface from this keg so the product boundary holds regardless.
+# — never `rumps`, an `alle-tray` launcher, `alle.tray`, or `alle.companion`.
+# The base wheel enforces that boundary for every native distribution channel.
 class Alle < Formula
   include Language::Python::Virtualenv
 
   desc "Universal VPN client with rule-based routing (headless CLI + Web UI)"
   homepage "https://github.com/zydo/alle"
-  url "https://files.pythonhosted.org/packages/96/fe/63196332a103c722b4a4260b94edc44ff43cdf20e1bd74055ca610e20498/alle_proxy-0.1.8.tar.gz"
-  sha256 "caa34f0fd785dc8722abba22bfbe62912d8983af15268d7362c0fdfbdde20505"
+  url "https://files.pythonhosted.org/packages/fa/d1/dfae63756cb66a205c3ea7b61c4e327b4f5ef05b17a0a42ab2156eae4b3f/alle_proxy-0.1.10.tar.gz"
+  sha256 "b9ca0a8c1b55e4b9814685abba135f998ce0d30587d23b2788b30e99b7b269fa"
   license "MIT"
 
   depends_on "libyaml"
@@ -28,6 +26,11 @@ class Alle < Formula
   # Runtime dependencies, pinned by checksum from uv.lock. Regenerate with
   # `brew update-python-resources` (or by hand from uv.lock) whenever the
   # locked versions change.
+  resource "packaging" do
+    url "https://files.pythonhosted.org/packages/d7/f1/e7a6dd94a8d4a5626c03e4e99c87f241ba9e350cd9e6d75123f992427270/packaging-26.2.tar.gz"
+    sha256 "ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"
+  end
+
   resource "pyyaml" do
     url "https://files.pythonhosted.org/packages/05/8e/961c0007c59b8dd7729d542c61a4d537767a59645b82a0b521206e1e25c2/pyyaml-6.0.3.tar.gz"
     sha256 "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
@@ -40,22 +43,6 @@ class Alle < Formula
 
   def install
     virtualenv_install_with_resources
-
-    # Enforce the headless product boundary. The base wheel bundles the
-    # optional menu-bar companion (used by the pip/uv channel and its tests);
-    # remove that GUI surface so this keg exposes only the CLI, daemon/control
-    # API, and bundled Web UI.
-    site = Dir[libexec/"lib/python*/site-packages/alle"].first
-    %w[tray companion].each do |mod|
-      # plain `rm` (not rm_f): fail the build loudly if the strip list drifts
-      # from what the wheel actually ships.
-      rm "#{site}/#{mod}.py"
-      rm Dir["#{site}/__pycache__/#{mod}.*.pyc"]
-    end
-
-    # The base wheel declares an `alle-tray` gui-script; never expose it here.
-    rm bin/"alle-tray"
-    rm libexec/"bin/alle-tray"
   end
 
   # Native Homebrew supervision for the per-user daemon. On macOS this becomes a
@@ -64,6 +51,10 @@ class Alle < Formula
   # `brew services`, not `alle daemon install` (see caveats).
   service do
     run [opt_bin/"alle", "applier"]
+    environment_variables ALLE_SERVICE:        "1",
+                          ALLE_SERVICE_OWNER:  "homebrew",
+                          ALLE_SERVICE_PREFIX: opt_prefix.to_s,
+                          PATH:                std_service_path_env
     keep_alive true
     log_path var/"log/alle.log"
     error_log_path var/"log/alle.log"
