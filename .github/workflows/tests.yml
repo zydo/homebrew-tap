@@ -51,6 +51,19 @@ jobs:
         if: runner.os == 'Linux'
         run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
 
+      # Inside bwrap's user namespace only the runner's own uid/gid are mapped,
+      # and Homebrew's Mktemp chowns its staging directory to the brew file's
+      # group — EINVAL for any unmapped gid, which Mktemp does not rescue
+      # (Errno::EPERM only). Give the brew file the runner's primary group so
+      # that chown targets the one mapped gid and sandboxed builds succeed.
+      - name: Align brew's group with the runner user
+        if: runner.os == 'Linux'
+        run: |
+          brew_file="$(readlink -f /home/linuxbrew/.linuxbrew/bin/brew)"
+          stat -c "before: %U:%G (%u:%g) $brew_file" "$brew_file"
+          sudo chgrp "$(id -g)" "$brew_file"
+          stat -c "after:  %U:%G (%u:%g) $brew_file" "$brew_file"
+
       - name: Expose this checkout as the tap
         run: |
           tap_dir="$(brew --repository)/Library/Taps/zydo/homebrew-tap"
