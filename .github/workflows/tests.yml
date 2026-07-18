@@ -1,0 +1,71 @@
+name: Formula tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_ENV_HINTS: "1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Build every formula in the tap from source on clean macOS and Linux runners,
+# run its `test do` block (for alle: smokes `alle version`, the bundled Web UI
+# assets, and the absence of every GUI/tray surface), and hold the tap to
+# `brew audit --strict`.
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Put Linuxbrew on PATH
+        if: runner.os == 'Linux'
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
+
+      - name: Expose this checkout as the tap
+        run: |
+          tap_dir="$(brew --repository)/Library/Taps/zydo/homebrew-tap"
+          mkdir -p "$(dirname "$tap_dir")"
+          ln -s "$GITHUB_WORKSPACE" "$tap_dir"
+
+      - name: Build every formula from source
+        run: |
+          for formula in Formula/*.rb; do
+            name="$(basename "$formula" .rb)"
+            brew install --build-from-source --verbose "zydo/tap/$name"
+          done
+
+      - name: CLI startup smoke (alle)
+        run: |
+          "$(brew --prefix)/bin/alle" version
+          "$(brew --prefix)/bin/alle" --help >/dev/null
+
+      - name: Run every formula's test block
+        run: |
+          for formula in Formula/*.rb; do
+            name="$(basename "$formula" .rb)"
+            brew test "zydo/tap/$name"
+          done
+
+      - name: Audit
+        run: |
+          for formula in Formula/*.rb; do
+            name="$(basename "$formula" .rb)"
+            brew audit --strict "zydo/tap/$name"
+          done
