@@ -16,8 +16,8 @@ class Alle < Formula
 
   desc "Universal VPN client with rule-based routing (headless CLI + Web UI)"
   homepage "https://github.com/zydo/alle"
-  url "https://files.pythonhosted.org/packages/fa/d1/dfae63756cb66a205c3ea7b61c4e327b4f5ef05b17a0a42ab2156eae4b3f/alle_proxy-0.1.10.tar.gz"
-  sha256 "b9ca0a8c1b55e4b9814685abba135f998ce0d30587d23b2788b30e99b7b269fa"
+  url "https://files.pythonhosted.org/packages/24/2d/596c54ee5c2189376576ccc2204aea26f0297e11f81884ce145408c07b99/alle_proxy-0.1.11.tar.gz"
+  sha256 "30a9fffb423ed0332119f118aa1643402c00134c94b80388219774b314a9fe67"
   license "MIT"
 
   depends_on "libyaml"
