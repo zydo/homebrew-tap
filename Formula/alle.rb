@@ -16,29 +16,30 @@ class Alle < Formula
 
   desc "Universal VPN client with rule-based routing (headless CLI + Web UI)"
   homepage "https://github.com/zydo/alle"
-  url "https://files.pythonhosted.org/packages/01/8b/8d354c7542443791a73cc24497b70482822edd05f34289d9d1fd2a8bf9c8/alle_proxy-0.1.12.tar.gz"
-  sha256 "dbe75bbb119d9cccf5b930aa477ca755abfda6afb9281f25106e075310570f0d"
+  url "https://files.pythonhosted.org/packages/88/59/d4ea18e7b98b5bd96f87d45e81954b42f52e1be22040c5a05a613f0a98f0/alle_proxy-0.1.13.tar.gz"
+  sha256 "e3500d9ce8ad25d3914bf6fd86f9c4b66128e047189e25985939774bcf413b32"
   license "MIT"
 
   depends_on "libyaml"
-  depends_on "python@3.13"
+  depends_on "python@3.14"
 
   # Runtime dependencies, pinned by checksum from uv.lock. Regenerate with
-  # `brew update-python-resources` (or by hand from uv.lock) whenever the
-  # locked versions change.
+  # `brew update-python-resources --extra-packages packaging` whenever the
+  # locked versions change (`packaging` is otherwise treated as bootstrap
+  # tooling and omitted).
   resource "packaging" do
     url "https://files.pythonhosted.org/packages/d7/f1/e7a6dd94a8d4a5626c03e4e99c87f241ba9e350cd9e6d75123f992427270/packaging-26.2.tar.gz"
     sha256 "ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"
   end
 
-  resource "pyyaml" do
-    url "https://files.pythonhosted.org/packages/05/8e/961c0007c59b8dd7729d542c61a4d537767a59645b82a0b521206e1e25c2/pyyaml-6.0.3.tar.gz"
-    sha256 "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
-  end
-
   resource "pycountry" do
     url "https://files.pythonhosted.org/packages/de/1d/061b9e7a48b85cfd69f33c33d2ef784a531c359399ad764243399673c8f5/pycountry-26.2.16.tar.gz"
     sha256 "5b6027d453fcd6060112b951dd010f01f168b51b4bf8a1f1fc8c95c8d94a0801"
+  end
+
+  resource "pyyaml" do
+    url "https://files.pythonhosted.org/packages/05/8e/961c0007c59b8dd7729d542c61a4d537767a59645b82a0b521206e1e25c2/pyyaml-6.0.3.tar.gz"
+    sha256 "d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"
   end
 
   def install
