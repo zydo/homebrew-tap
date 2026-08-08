@@ -51,6 +51,18 @@ jobs:
         if: runner.os == 'Linux'
         run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
 
+      # The Ubuntu image's Linuxbrew lags homebrew-core, and HOMEBREW_NO_AUTO_UPDATE
+      # means it never catches up. Once a core formula uses install-steps DSL the
+      # older code lacks, installing it dies with "unknown install step: <step>"
+      # before any tap formula is reached — ca-certificates' `run` step did exactly
+      # that. Update Homebrew itself once, up front. HOMEBREW_NO_AUTO_UPDATE only
+      # suppresses the implicit pre-command update, so every later brew command
+      # still runs against a fixed snapshot rather than updating mid-run.
+      # macOS is excluded: its runner image keeps Homebrew current already.
+      - name: Update Homebrew itself
+        if: runner.os == 'Linux'
+        run: brew update --force --quiet
+
       # Inside bwrap's user namespace only the runner's own uid/gid are mapped,
       # and Homebrew's Mktemp chowns its staging directory to the brew file's
       # group — EINVAL for any unmapped gid, which Mktemp does not rescue
